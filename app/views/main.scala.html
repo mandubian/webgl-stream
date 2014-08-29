@@ -1,0 +1,31 @@
+@(title: String)(content: Html)
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>@title</title>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+        <script src="@routes.Assets.at("javascripts/jquery-1.9.0.min.js")" type="text/javascript"></script>
+
+        <script src="@routes.Assets.at("javascripts/lib/gl-matrix.js")"></script>
+        <script src="@routes.Assets.at("javascripts/lib/webgl-debug.js")"></script>
+
+        <script src="@routes.Assets.at("javascripts/Utils.js")"></script>
+        <script src="@routes.Assets.at("javascripts/Log.js")"></script>
+        <script src="@routes.Assets.at("javascripts/MatrixStack.js")"></script>
+
+        <script src="@routes.Assets.at("javascripts/Camera.js")"></script>
+        <script src="@routes.Assets.at("javascripts/Shader.js")"></script>
+        <script src="@routes.Assets.at("javascripts/VBO.js")"></script>
+        <script src="@routes.Assets.at("javascripts/Cube.js")"></script>
+        <script src="@routes.Assets.at("javascripts/Texture.js")"></script>
+        <script src="@routes.Assets.at("javascripts/World.js")"></script>
+        <script src="@routes.Assets.at("javascripts/Engine.js")"></script>
+        <script src="@routes.Assets.at("javascripts/Game.js")"></script>
+    </head>
+    <body onload="onLoad();">
+        @content
+    </body>
+</html>

@@ -1,0 +1,180 @@
+@(message: String)(implicit request: RequestHeader)
+
+@main("Welcome to Play 2.1") {
+    
+<script>
+
+var game,
+    engine,
+    camera,
+    world,
+    video,
+    video2;
+
+var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
+var polySocket;
+  
+var sendMessage = function() {
+  polySocket.send(JSON.stringify(
+    "toto"
+  ))
+}
+  
+var receiveEvent = function(event) {
+  var data = JSON.parse(event.data);
+  
+  // Handle errors
+  if(data.error) {
+      polySocket.close();
+      return;
+  }
+
+  world.addPoly(data);
+  console.log(data);
+}
+          
+  
+function onLoad(){
+  video = document.getElementById("video");
+  //video2 = document.getElementById("video2");
+  
+  function playVideo () {
+    video.play();
+    //video2.play();
+  }
+
+  video.addEventListener("canplaythrough", function () {
+    playVideo();
+    engine = Engine({
+      canvas : 'canvas',
+      vertexShaderId: 'vertex-shader',
+      fragmentShaderId: 'fragment-shader'
+    });
+
+    camera = Camera({
+      engine: engine, 
+      position: vec3.fromValues(0.0, 0.0, 150.0),
+      fov: 60.0
+    });
+
+    camera.lookAt(vec3.fromValues(0.0, 0.0, 0.0));
+
+    world = World({
+      engine: engine,
+      texture: Texture.fromImage(engine, 64, 64, video)
+    });
+
+    game = Game({
+      engine: engine,
+      camera: camera,
+      world:  world
+    });
+  
+    sendMessage();
+  });
+
+  video.addEventListener("play", function () {
+    if(game) game.run();
+  });
+
+  video.addEventListener("pause", function () {
+    //game.stop();
+  });
+
+  //video.load();
+  video.load();
+
+  polySocket = new WS("@routes.Application.polystream().webSocketURL()")
+  polySocket.onmessage = receiveEvent;
+
+}
+</script>
+
+<script type="text/javascript">
+
+
+  
+</script>
+
+<body onload="onLoad();">
+
+<canvas id="canvas" style="border: none;" width="1800" height="900"></canvas>
+
+<video id="video" loop controls muted=true style="display:none">
+  Your browser does not support the video tag. :(
+  <source src="@routes.Assets.at("images/hammock.ogv")" type="video/ogg" />   
+  <source src="@routes.Assets.at("images/hammock.webm")" type="video/vp8" /> 
+  <source src="@routes.Assets.at("images/hammock.mp4")" type="video/mp4" /> 
+</video>
+
+<!--video id="video" loop controls style="display:none">
+  Your browser does not support the video tag. :(
+  <source src="@routes.Assets.at("images/toochChristmas09.ogv")" type="video/ogg" />   
+  <source src="@routes.Assets.at("images/toochChristmas09.webm")" type="video/vp8" /> 
+  <source src="@routes.Assets.at("images/toochChristmas09.mp4")" type="video/mp4" /> 
+</video-->
+
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+  attribute vec3 aVertexPosition;
+  attribute vec3 aVertexNormal;
+  attribute vec2 aTextureCoord;
+
+  uniform mat4 uModelMatrix;
+  uniform mat4 uViewMatrix;
+  uniform mat3 uNormalMatrix;
+  uniform mat4 uModelViewMatrix;
+  uniform mat4 uProjectionMatrix;
+  uniform mat4 uModelViewProjectionMatrix;
+  uniform vec2 uViewportSize;
+
+  uniform vec2 uDeltaTime;
+
+  varying vec3 vNormal;
+  varying vec2 vTextureCoord;
+  varying vec3 vLighting;
+
+  highp vec3 ambientLight = vec3(1.5, 1.5, 1.5);
+  highp vec3 directionalLightColor = vec3(0.5, 0.5, 0.75);
+  highp vec3 directionalVector = vec3(0.85, 0.8, 0.75);
+  highp float directional = max(dot(vNormal.xyz, directionalVector), 0.0);
+
+  void main() {  
+    gl_Position = uModelViewProjectionMatrix * vec4(
+      aVertexPosition.x + sin(uDeltaTime.x/2000.), 
+      aVertexPosition.y + sin(uDeltaTime.x/2000.), 
+      /*sin(uDeltaTime.x/200.) * */15. * 
+      sin(
+        sin(uDeltaTime.x/2000.)*sqrt(aVertexPosition.x*aVertexPosition.x+aVertexPosition.y*aVertexPosition.y)/4.), 
+      1.0);
+    vTextureCoord = aTextureCoord;
+    vNormal = uNormalMatrix * aVertexNormal;
+
+    /*highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);
+    highp vec3 directionalLightColor = vec3(0.5, 0.5, 0.75);
+    highp vec3 directionalVector = vec3(0.85, 0.8, 0.75);
+    highp float directional = max(dot(vNormal.xyz, directionalVector), 0.0);*/
+    vLighting = ambientLight + (directionalLightColor * directional);
+  }  
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+  precision mediump float;
+
+  uniform sampler2D uTexture;
+
+  varying vec3 vNormal;
+  varying vec2 vTextureCoord;
+  varying vec3 vLighting;
+
+  void main() {  
+    vec3 normal = vNormal;
+    vec4 color = texture2D(uTexture, vec2(vTextureCoord.s, vTextureCoord.t));
+    //gl_FragColor = clamp(color, 0.0, 1.0);
+    /*gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);*/
+     
+    gl_FragColor = vec4(color.rgb * vLighting, color.a);
+  } 
+</script>    
+
+}
